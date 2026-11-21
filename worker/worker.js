@@ -51,15 +51,36 @@ Naturalness:
 1: Extremely unnatural and difficult to understand.
 A locally repairable grammar error with an obvious intended reading earns Grammar 3. Error count alone does not justify 2. For a 1 or 2, explain specifically what became difficult to understand. Quote the actual issue when deducting points. Judge idiomatic phrasing independently, and do not penalize a grammar slip again unless there is a distinct naturalness problem.`;
 
-function requestGrade(env, instructions, input, signal) {
+function objectSchema(properties) {
+  return {type: 'object', properties, required: Object.keys(properties), additionalProperties: false};
+}
+
+const textField = {type: 'string'};
+const scoreField = {type: 'integer'};
+const meaningSchema = objectSchema({
+  meaning: textField,
+  score: scoreField,
+  improvedTranslation: textField,
+});
+const englishSchema = objectSchema({
+  grammar: textField,
+  naturalness: textField,
+  scores: objectSchema({grammar: scoreField, naturalness: scoreField}),
+});
+
+function requestGrade(env, instructions, input, signal, name, schema) {
+  const model = env.GROQ_MODEL || 'openai/gpt-oss-20b';
+  const responseFormat = ['openai/gpt-oss-20b', 'openai/gpt-oss-120b'].includes(model)
+    ? {type: 'json_schema', json_schema: {name, strict: true, schema}}
+    : {type: 'json_object'};
   return fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {'Authorization': `Bearer ${env.GROQ_API_KEY}`, 'Content-Type': 'application/json'},
     signal,
     body: JSON.stringify({
-      model: env.GROQ_MODEL || 'openai/gpt-oss-20b',
+      model,
       max_completion_tokens: 2200,
-      response_format: {type: 'json_object'},
+      response_format: responseFormat,
       messages: [
         {role: 'system', content: instructions},
         {role: 'user', content: JSON.stringify(input)},
@@ -118,8 +139,8 @@ export default {
       const {source, translation} = body;
       const signal = AbortSignal.timeout(25000);
       const [meaningResponse, englishResponse] = await Promise.all([
-        requestGrade(env, meaningInstructions, {source, translation}, signal),
-        requestGrade(env, englishInstructions, {translation}, signal),
+        requestGrade(env, meaningInstructions, {source, translation}, signal, 'meaning_grade', meaningSchema),
+        requestGrade(env, englishInstructions, {translation}, signal, 'english_grade', englishSchema),
       ]);
       const responses = [meaningResponse, englishResponse];
       if (responses.some(response => response.status === 429)) return reply({error: 'Groq’s usage limit has been reached. Please try again later.'}, 429);

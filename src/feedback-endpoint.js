@@ -1,4 +1,4 @@
-export const feedbackOrigin = 'https://translatebetter-api.jinping4038.workers.dev';
+export const feedbackOrigin = 'https://expressbetter-api.jinping4038.workers.dev';
 export const feedbackPath = '/feedback';
 export const previewFeedbackPath = '/ExpressBetter/api/feedback';
 
