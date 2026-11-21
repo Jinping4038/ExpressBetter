@@ -1,3 +1,4 @@
+import {feedbackEndpoint} from './feedback-endpoint.js';
 import AssessmentHistory from './AssessmentHistory.jsx';
 import {ReviewerMeaning} from './ReviewerSupport.jsx';
 import React, {useEffect, useRef, useState} from 'react';
@@ -75,7 +76,7 @@ export default function Assessment({assessments, onComplete, onPractice, onProgr
         const timer = setTimeout(() => controller.abort(), 35000);
         let response;
         try {
-          response = await fetch('https://translatebetter-api.jinping4038.workers.dev/feedback', {
+          response = await fetch(feedbackEndpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             signal: controller.signal,

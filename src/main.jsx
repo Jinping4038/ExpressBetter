@@ -1,7 +1,9 @@
+import {feedbackEndpoint} from './feedback-endpoint.js';
 import React, {useState, useRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import {BookOpen, Pencil, Bookmark, ChartNoAxesColumnIncreasing, Lightbulb, ArrowRight, RotateCcw, Send, Volume2, Copy, Check, Sparkles, Target, FileCheck2, MessagesSquare, Heart, X, Home, Trash2} from 'lucide-react';
+import {BookOpen, Pencil, Bookmark, ChartNoAxesColumnIncreasing, Lightbulb, ArrowRight, RotateCcw, Send, Volume2, Copy, Check, Sparkles, Target, FileCheck2, MessagesSquare, Heart, X, Home, Trash2, ChevronDown, ChevronLeft, UserRound} from 'lucide-react';
 import './styles.css';
+import './mobile.css';
 import exercises from './exercises.js';
 import Progress from './Progress.jsx';
 import RevisionComparison from './RevisionComparison.jsx';
@@ -21,15 +23,25 @@ function savedHistory(entry){
 function FeedbackCards({feedback}){
   return <>{[[Target,'Meaning Accuracy','meaning'],[FileCheck2,'Grammar','grammar'],[MessagesSquare,'Naturalness','naturalness']].map(([Icon,title,key])=>{const rawScore=feedback.scores?.[key];const score=validScore(rawScore)?rawScore:null;const color=score===null?'unscored':score===5?'green':score>=3?'amber':'coral';return <article className={`feedback-card feedback-category-${key} ${color}`} key={key}><span className="feedback-icon"><Icon size={21}/></span><div className="feedback-content"><div className="score-heading"><h4>{title}</h4>{score!==null&&<strong className="score-badge" aria-label={`${title}: ${score} out of 5`}>{score}/5</strong>}</div><p>{feedback[key]}</p></div></article>})}{!feedback.scores&&<p className="demo-note">Scores will appear after the updated Cloudflare Worker is deployed.</p>}</>;
 }
+const phonePreview = new URLSearchParams(globalThis.location?.search).get('preview') === 'mobile';
+const phoneViewport = globalThis.matchMedia?.('(max-width: 600px)');
+
 function App(){
 const [restored]=useState(readPracticeSession);
+const [mobile, setMobile] = useState(() => phonePreview || Boolean(phoneViewport?.matches));
+const [editingFeedback, setEditingFeedback] = useState(false);
+useEffect(() => {
+  const update = event => setMobile(phonePreview || event.matches);
+  phoneViewport?.addEventListener('change', update);
+  return () => phoneViewport?.removeEventListener('change', update);
+}, []);
 const [appMode,setAppMode]=useState(readAppMode);
 function selectAppMode(mode){
   if(!['learner','reviewer'].includes(mode))return;
   setAppMode(mode);
   try{localStorage.setItem(appModeKey,mode);}catch{notify('App mode could not be saved. Your choice will last for this visit.');}
 }
-const [page,setPage]=useState(restored?.page==='settings'?'home':restored?.page==='comparison'?'revision':restored?.page||'home'),[index,setIndex]=useState(()=>restored?.index<exercises.length?restored.index:selectPracticeSentence(exercises,read('tb-completed',[]),read(practicePreferencesKey,null))),[translation,setTranslation]=useState(restored?.translation||''),[hint,setHint]=useState(restored?.hint||0),[saved,setSaved]=useState(()=>read('tb-saved',[])),[completed,setCompleted]=useState(()=>read('tb-completed',[])),[toast,setToast]=useState('');
+const [page,setPage]=useState(restored?.page==='settings'||(mobile&&restored?.page==='home')?(mobile?'practice':'home'):restored?.page==='comparison'?'revision':restored?.page||(mobile?'practice':'home')),[index,setIndex]=useState(()=>restored?.index<exercises.length?restored.index:selectPracticeSentence(exercises,read('tb-completed',[]),read(practicePreferencesKey,null))),[translation,setTranslation]=useState(restored?.translation||''),[hint,setHint]=useState(restored?.hint||0),[saved,setSaved]=useState(()=>read('tb-saved',[])),[completed,setCompleted]=useState(()=>read('tb-completed',[])),[toast,setToast]=useState('');
 const [showAnswer,setShowAnswer]=useState(restored?.showAnswer||false),[showFeedback,setShowFeedback]=useState(restored?.showFeedback||false);
 const [feedback,setFeedback]=useState(restored?.feedback||null),[feedbackError,setFeedbackError]=useState(''),[loading,setLoading]=useState(false);
 const [revision,setRevision]=useState(restored?.revision||'');
@@ -80,10 +92,10 @@ const revising=page==='revision';
 const draft=revising?revision:translation;
 if(!draft.trim()||loading)return;
 activeRequest.current?.abort();const controller=new AbortController();activeRequest.current=controller;
-setLoading(true);setShowFeedback(true);if(!revising)setFeedback(null);setFeedbackError('');
+setEditingFeedback(false);setLoading(true);setShowFeedback(true);if(!revising)setFeedback(null);setFeedbackError('');
 const timeout=setTimeout(()=>controller.abort(),35000);
 try{
-const response=await fetch('https://translatebetter-api.jinping4038.workers.dev/feedback',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({source:ex.zh,reference:ex.en,translation:draft.trim()})});
+const response=await fetch(feedbackEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({source:ex.zh,reference:ex.en,translation:draft.trim()})});
 let data;try{data=await response.json()}catch{throw new Error('The feedback backend is not ready yet. Please finish deploying the Cloudflare Worker code.')}
 if(!response.ok)throw new Error(data.error||'Feedback is unavailable. Please try again.');
 if(!data.feedback||!['meaning','grammar','naturalness','improvedTranslation'].every(key=>typeof data.feedback[key]==='string'&&data.feedback[key].trim()))throw new Error('The AI returned incomplete feedback. Please try again.');
@@ -203,9 +215,29 @@ async function save(){
   } catch(error){notify(error.message);}
 }
 function speak(){if('speechSynthesis' in window){speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(ex.zh);utterance.lang='zh-CN';speechSynthesis.speak(utterance)}else notify('Audio is unavailable in this browser')}
+const mobileFeedback = mobile && page === 'practice' && Boolean(feedback) && !editingFeedback;
+const learning = !['home','practice','revision'].includes(page);
+useEffect(() => {
+  if (mobile) window.scrollTo(0, 0);
+}, [mobile, page, mobileFeedback, index]);
+const goalCount = Math.min(todayCount,10);
+const mobileScore = mobileFeedback && versions.at(-1)
+  ? Math.round(versions.at(-1).overall * 20)
+  : null;
+const mobileHeader = mobile && (mobileFeedback || page === 'revision')
+  ? <div className="mobile-screen-title">
+      <button type="button" className="icon-button" aria-label={mobileFeedback?'Back to translation':'Back to AI feedback'} onClick={()=>{
+        if (mobileFeedback) setEditingFeedback(true);
+        else {setEditingFeedback(false);setFeedbackError('');setPage('practice');}
+      }}><ChevronLeft size={25}/></button>
+      <h1>{mobileFeedback?'AI Feedback':'Revise'}</h1>
+    </div>
+  : null;
 const sourceSentence=<ReviewerMeaning key={ex.zh} source={ex.zh} reviewer={appMode==='reviewer'} audio={<button onClick={speak} className="icon-button" aria-label="Listen to Chinese sentence"><Volume2 size={21}/></button>}/>;
 const referenceAnswer=showAnswer&&<section id="reference-answer" className="feedback inline-result" aria-label="Reference answer"><h3><BookOpen size={19}/>Reference answer</h3><div className="reference"><p>{ex.en}</p><button className="icon-button" onClick={async()=>{try{await navigator.clipboard.writeText(ex.en);notify('Reference answer copied')}catch{notify('Copy is unavailable in this browser')}}} aria-label="Copy reference answer"><Copy size={17}/></button></div><button className="save-button" onClick={save}><Bookmark size={15}/>{saved.some(s=>s.zh===ex.zh)?'Saved to my sentences':'Save this sentence'}</button></section>;
-return <div className="app"><AppModeChooser mode={appMode} onSelect={selectAppMode}/><header><button className="brand" onClick={()=>setPage('home')} aria-label="ExpressBetter home"><span className="brand-icon"><BookOpen size={31}/></span><span><strong>ExpressBetter</strong><small>AI-assisted English translation practice</small></span></button><AppModeSwitcher mode={appMode} onSelect={selectAppMode}/></header>
+return <div className={`app${mobile?' mobile-app':''}${phonePreview?' phone-preview':''}${learning?' mobile-learning':''}`}>
+<AppModeChooser mode={appMode} onSelect={selectAppMode}/><header>{mobileHeader || <><button className="brand" onClick={()=>setPage(mobile?'practice':'home')} aria-label="ExpressBetter home"><span className="brand-icon">{mobile?<Sparkles size={22}/>:<BookOpen size={31}/>}</span><span><strong>ExpressBetter</strong>{!mobile&&<small>AI-assisted English translation practice</small>}</span></button><AppModeSwitcher mode={appMode} onSelect={selectAppMode}/>
+{mobile&&!learning&&<div className="mobile-goal"><span>{goalCount} / 10</span><progress aria-label="Today’s practice goal" value={goalCount} max={10}/></div>}</>}</header>
 {page==='home'?<main className="landing"><section className="hero"><div className="hero-copy"><span className="eyebrow"><span/> A LITTLE PRACTICE. A LOT OF PROGRESS.</span><h1>Improve your English<br/>through <span>real translations.</span></h1><p>Find the right words. Make them your own.<br/>Practice Chinese → English translation with thoughtful feedback that helps you grow.</p><div className="hero-actions"><button className="primary start" onClick={()=>setPage('practice')}>Start practicing</button><button className="secondary check-level" onClick={()=>setPage('assessment')}>Check Your Level</button></div><div className="hero-note"><Check size={15}/> No pressure. Just progress, one sentence at a time.</div></div><div className="illustration" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><span className="twinkle one">✦</span><span className="twinkle two">✧</span><div className="bubble chinese">中</div><div className="bubble english">A</div><div className="book"><div className="book-page left"><i/><i/><i/><i/><i/></div><div className="book-page right"><i/><i/><i/><i/><i/></div></div><span className="book-shadow"/><span className="mini-pill"><Sparkles size={14}/> Words open worlds</span></div></section><div className="section-heading"><h2>A better way to learn by doing</h2><span>Small steps. Lasting confidence.</span></div><section className="features">{[[Heart,'amber','Personalized feedback','Understand the meaning, grammar, and naturalness of your writing.'],[FileCheck2,'purple','Revise and improve','Compare your versions and discover how to make each sentence better.'],[Bookmark,'green','Keep the good ones','Build a personal collection of useful sentences to revisit.'],[ChartNoAxesColumnIncreasing,'blue','See your progress','Turn everyday practice into improvement you can feel.']].map(([Icon,color,title,text],i)=><article key={title}><div className={'feature-icon '+color}><Icon size={23}/></div><span className="feature-number">0{i+1}</span><h3>{title}</h3><p>{text}</p></article>)}</section><footer><span>Made for the moments when you want to get a little better.</span><span>中文 <ArrowRight size={12}/> English</span></footer></main>:
 <div className="workspace">
 {<aside className="sidebar"><div>{nav.map(([id,label,Icon])=><button key={id} className={page===id||(id==='assessment'&&page==='assessment-history')||(id==='practice'&&['revision','comparison'].includes(page))||(id==='saved'&&page==='saved-detail')?'selected':''} onClick={()=>setPage(id)}><Icon size={19}/>{label}</button>)}</div><div className="goal"><span>Today’s goal</span><div><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle cx="20" cy="20" r="16" style={{strokeDasharray:`${Math.min(todayCount,10)*10.05} 101`}}/></svg><strong>{Math.min(todayCount,10)} <small>/ 10<br/>sentences</small></strong></div><p>{todayCount>=10?'Goal reached. Nice work!':'You’re building a good habit.'}</p></div></aside>}
@@ -224,11 +256,11 @@ return <div className="app"><AppModeChooser mode={appMode} onSelect={selectAppMo
     {version.scores&&<div className="history-scores">{scoreCategories.map(([key,label])=><span key={key}>{label} {formatScore(version.scores[key])}</span>)}</div>}
   </section>):<p className="muted">Practice this sentence and save your translation to start its history.</p>}
 </main>:page==='revision'?<main className="practice-main revision-view">
-  <h1>Revise Your Translation</h1>
+  <h1 className="revision-desktop-title">Revise Your Translation</h1>
   <p className="revision-description">Use the feedback to improve your translation.</p>
   {sourceSentence}
   <form onSubmit={submit}>
-    <div className="label-row">Original Translation</div>
+    <div className="label-row">{mobile?"Your Original":"Original Translation"}</div>
     <p className="revision-original">{versions[0]?.text||translation}</p>
     <div className="label-row"><label htmlFor="revision">Your Revision</label></div>
     <div className="textarea-wrap">
@@ -237,12 +269,13 @@ return <div className="app"><AppModeChooser mode={appMode} onSelect={selectAppMo
     </div>
     {feedbackError&&<p role="alert" className="feedback-error">{feedbackError}</p>}
     <div className="revision-actions">
-      <button type="button" className="secondary" disabled={loading} onClick={()=>{setFeedbackError('');setPage('practice')}}>← Back</button>
+      <button type="button" className="secondary revision-back" disabled={loading} onClick={()=>{setFeedbackError('');setPage('practice')}}>← Back</button>
       <button type="submit" className="primary" disabled={loading||!revision.trim()||revision.trim()===translation.trim()}>
-        {loading?'Reviewing revision…':'Submit Revision'} <ArrowRight size={17}/>
+        {loading?'Reviewing revision…':mobile?'Check My Revision':'Submit Revision'} <ArrowRight size={17}/>
       </button>
     </div>
   </form>
+  {mobile&&!hasRevisions&&hasNextSentence&&<button type="button" className="secondary mobile-skip" disabled={loading} onClick={next}>Next Sentence <ArrowRight size={17}/></button>}
   {referenceAnswer}
   <section className="feedback inline-result" aria-label="Revision AI feedback" aria-live="polite">
     <div className="feedback-heading"><h3><Sparkles size={19}/>{hasRevisions?`AI feedback · Revision ${versions.indexOf(comparedRevision)}`:'AI feedback on your original translation'}</h3></div>
@@ -255,19 +288,31 @@ return <div className="app"><AppModeChooser mode={appMode} onSelect={selectAppMo
       {hasNextSentence&&<button type="button" className="primary" onClick={next}>Next Sentence <ArrowRight size={17}/></button>}
     </div>
   </>}
-</main>:page==='practice'?<><main className="practice-main"><div className="practice-top">{feedback&&<button type="button" className="secondary practice-save" onClick={saveMyTranslation} disabled={savedCurrentTranslation}>{savedCurrentTranslation?<Check size={17}/>:<Bookmark size={17}/>} {savedCurrentTranslation?'Saved to My Sentences':'Save to My Sentences'}</button>}</div>{sourceSentence}{page==='practice'&&<p className="instructions">Take a moment to understand the sentence, then make it your own in English.</p>}<form onSubmit={submit}><div className="label-row"><label htmlFor="translation">Your translation</label>{page==='feedback'&&<button type="button" className="text-button" onClick={()=>setPage('practice')}>Edit <Pencil size={13}/></button>}</div><div className={'textarea-wrap '+(page==='feedback'?'submitted':'')}><textarea id="translation" placeholder="Type your English translation here…" maxLength={500} value={translation} readOnly={page==='feedback'} onChange={e=>{setTranslation(e.target.value);if(!e.target.value.trim())setShowAnswer(false);clearFeedback()}} required/><span className="counter">{translation.length}/500</span></div>{hint>0&&<div className="hint" id="practice-hints">
+</main>:page==='practice'?<><main className={`practice-main${mobileFeedback?' mobile-feedback-screen':''}`}><div hidden={mobileFeedback}>
+<div className="practice-top">{feedback&&<button type="button" className="secondary practice-save" onClick={saveMyTranslation} disabled={savedCurrentTranslation}>{savedCurrentTranslation?<Check size={17}/>:<Bookmark size={17}/>} {savedCurrentTranslation?'Saved to My Sentences':'Save to My Sentences'}</button>}</div>{sourceSentence}{page==='practice'&&<p className="instructions">Take a moment to understand the sentence, then make it your own in English.</p>}<form onSubmit={submit}><div className="label-row"><label htmlFor="translation">Your translation</label>{page==='feedback'&&<button type="button" className="text-button" onClick={()=>setPage('practice')}>Edit <Pencil size={13}/></button>}</div><div className={'textarea-wrap '+(page==='feedback'?'submitted':'')}><textarea id="translation" placeholder="Type your English translation here…" maxLength={500} value={translation} readOnly={page==='feedback'} onChange={e=>{setTranslation(e.target.value);if(!e.target.value.trim())setShowAnswer(false);clearFeedback()}} required/><span className="counter">{translation.length}/500</span></div>{mobile&&<button className="mobile-hint hint-button" type="button" aria-expanded={hint>0} onClick={()=>setHint(hint?0:1)}><Lightbulb size={22}/>{hint?'Hide hints':'Need a hint?'}<ChevronDown size={18}/></button>}
+{hint>0&&<div className="hint" id="practice-hints">
   <Lightbulb size={18}/>
   <div className="hint-content" aria-live="polite">
     <p><strong>Hint 1</strong> Vocabulary: <b>{ex.gentleHint.slice('Vocabulary: '.length)}</b></p>
     {hint===1?<button type="button" className="hint-button" onClick={()=>setHint(2)}>Show Hint 2</button>:<p><strong>Hint 2</strong> {ex.hint}</p>}
   </div>
   <button type="button" className="icon-button" aria-label="Close hints" onClick={()=>setHint(0)}><X size={15}/></button>
-</div>}<div className="practice-actions inline-actions"><button type="button" className="secondary" disabled={!translation.trim()} onClick={()=>setShowAnswer(!showAnswer)} aria-expanded={showAnswer} aria-controls="reference-answer"><BookOpen size={17}/>{showAnswer?'Hide the answer':'See the answer'}</button><button className="primary" disabled={!translation.trim()||loading} aria-controls="practice-feedback"><Sparkles size={17}/>{loading?'Getting feedback…':'Get AI feedback'}</button></div><div className="practice-tools"><button className="hint-button" type="button" aria-expanded={hint>0} onClick={()=>setHint(hint?0:1)}><Lightbulb size={16}/>{hint?'Hide hints':'Need a hint?'}</button><button type="button" className="text-button" onClick={()=>{clearFeedback();setTranslation('');setHint(0);setShowAnswer(false);setShowFeedback(false)}}><RotateCcw size={15}/>Reset</button><div className="sentence-navigation">
+</div>}<div className="practice-actions inline-actions"><button type="button" className="secondary" disabled={!translation.trim()} onClick={()=>setShowAnswer(!showAnswer)} aria-expanded={showAnswer} aria-controls="reference-answer"><BookOpen size={17}/>{showAnswer?'Hide the answer':'See the answer'}</button><button className="primary" disabled={!translation.trim()||loading} aria-controls="practice-feedback"><Sparkles size={17}/>{loading?'Getting feedback…':mobile?'Check My English':'Get AI feedback'}</button></div><div className="practice-tools"><button className="hint-button" type="button" aria-expanded={hint>0} onClick={()=>setHint(hint?0:1)}><Lightbulb size={16}/>{hint?'Hide hints':'Need a hint?'}</button><button type="button" className="text-button" onClick={()=>{clearFeedback();setTranslation('');setHint(0);setShowAnswer(false);setShowFeedback(false)}}><RotateCcw size={15}/>Reset</button><div className="sentence-navigation">
   {practicePosition>0&&<button type="button" className="text-button" onClick={previous}>Previous sentence</button>}
     {hasNextSentence&&<button type="button" className="text-button" onClick={next}>Next sentence<ArrowRight size={15}/></button>}
-</div></div></form>{referenceAnswer}{showFeedback&&<section id="practice-feedback" className="feedback inline-result" aria-label="Practice feedback" aria-live="polite"><div className="feedback-heading"><h3><Sparkles size={19}/>AI feedback</h3></div>{loading&&<p role="status">Reviewing your translation…</p>}{feedbackError&&<p role="alert" className="feedback-error">{feedbackError}</p>}{feedback&&<><FeedbackCards feedback={feedback}/><div className="feedback-actions">
+</div></div></form>{referenceAnswer}</div>{showFeedback&&(!mobile||!editingFeedback)&&<section id="practice-feedback" className="feedback inline-result" aria-label="Practice feedback" aria-live="polite"><div className="feedback-heading"><h3><Sparkles size={19}/>AI feedback</h3></div>{loading&&<p role="status">Reviewing your translation…</p>}{feedbackError&&<p role="alert" className="feedback-error">{feedbackError}</p>}  {feedback&&<>
+  {mobileFeedback&&Number.isFinite(mobileScore)&&<div className="mobile-score">
+    <div className="mobile-score-dial">
+      <svg viewBox="0 0 180 95" aria-hidden="true"><path d="M8 90a82 82 0 0 1 164 0" pathLength="100"/><path d="M8 90a82 82 0 0 1 164 0" pathLength="100" strokeDasharray={`${mobileScore} 100`}/></svg>
+      <strong>{mobileScore}<small> / 100</small></strong>
+    </div>
+  </div>}
+  <FeedbackCards feedback={feedback}/>
+  {mobileFeedback&&<div className="mobile-suggestion"><h3><Sparkles size={18}/> A More Natural Version</h3><p>{feedback.improvedTranslation}</p></div>}
+  <div className="feedback-actions">
+  {mobileFeedback&&<button type="button" className="secondary" onClick={saveMyTranslation} disabled={savedCurrentTranslation}><Bookmark size={17}/>{savedCurrentTranslation?'Saved':'Save'}</button>}
   {hasRevisions&&<button type="button" className="secondary" onClick={reviseTranslation}>View Comparison</button>}
-  <button type="button" className="primary" onClick={reviseTranslation}><Pencil size={17}/>{hasRevisions?'Revise Again':'Revise Translation'}</button>
+  <button type="button" className="primary" onClick={reviseTranslation}><Pencil size={17}/>{hasRevisions?'Revise Again':mobile?'Revise & Improve':'Revise Translation'}</button>
 </div></>}<p className="demo-note">Your translation is sent to Groq for review. AI feedback may contain mistakes.</p></section>}<div className="practice-footnote"><span className="status-dot"/>Keep editing your translation above and request feedback again whenever you’re ready.</div></main></>:
 page==='progress'?<Progress completed={completed}/>:page==='saved'?<main className="utility"><span className="eyebrow">YOUR LEARNING SPACE</span><h1>My Sentences</h1><p className="muted">Revisit useful expressions and let them become second nature.</p>{saved.length?saved.map(s=><article className="saved-card" key={s.zh}><BookOpen size={22}/><button type="button" className="saved-history-link" onClick={()=>{setSelectedSentence(s);setPage('saved-detail')}}>
   <span><strong>{s.zh}</strong><small>View translation history</small>
@@ -277,5 +322,8 @@ page==='progress'?<Progress completed={completed}/>:page==='saved'?<main classNa
     return <span key={key}>{label} {Number.isInteger(first)&&first!==last?`${formatScore(first)} → `:''}{formatScore(last)}</span>;
   })}</span>}</span>
 </button><button type="button" className="secondary saved-practice" onClick={()=>practiceSaved(s)}>Practice Again</button><button className="icon-button" aria-label="Remove saved sentence" onClick={()=>removeSavedSentence(s)}><Trash2 size={17}/></button></article>):<div className="empty"><Bookmark size={35}/><h3>Your collection starts with one sentence.</h3><p>Save a reference answer after completing an exercise.</p><button className="primary" onClick={()=>setPage('practice')}>Start practicing <ArrowRight size={17}/></button></div>}</main>:null}
-</div>}{toast&&<div className="toast" role="status"><Check size={17}/>{toast}</div>}</div>}
+</div>}{mobile&&<nav className="mobile-nav" aria-label="Main navigation">
+  <button type="button" aria-current={!learning?'page':undefined} onClick={()=>setPage('practice')}><Home size={22}/>Practice</button>
+  <button type="button" aria-current={learning?'page':undefined} onClick={()=>setPage('progress')}><UserRound size={22}/>My Learning</button>
+</nav>}{toast&&<div className="toast" role="status"><Check size={17}/>{toast}</div>}</div>}
 createRoot(document.getElementById('root')).render(<App/>);

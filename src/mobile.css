@@ -1,0 +1,140 @@
+.app.mobile-app {
+  --blue: #6043db;
+  --line: #e8e0f6;
+  --muted: #615b7c;
+  color: #15122d;
+  background: #faf8fe;
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app.phone-preview {
+  max-width: 414px;
+  box-shadow: 0 0 60px #33225120;
+}
+body:has(.app.phone-preview) { background: #ede8f7; }
+.mobile-app > header {
+  flex: none;
+  height: 84px;
+  padding: 0 22px;
+  border: 0;
+  background: transparent;
+  gap: 12px;
+}
+.mobile-app .brand { gap: 10px; }
+.mobile-app .brand strong { font-size: 21px; letter-spacing: -.7px; }
+.mobile-app .brand-icon {
+  width: 38px;
+  height: 38px;
+  color: white;
+  background: linear-gradient(145deg,#a290ff,#6950e4);
+  border-radius: 12px;
+}
+.mobile-app:not(.mobile-learning) .app-mode-switcher { display: none; }
+.mobile-app .app-mode-switcher button { padding: 7px; font-size: 11px; }
+.mobile-goal { text-align: right; font-size: 16px; color: #615b7c; }
+.mobile-goal progress { display: block; width: 76px; height: 8px; margin-top: 7px; accent-color: var(--blue); }
+.mobile-app .workspace { display: block; min-height: 0; padding-bottom: calc(64px + env(safe-area-inset-bottom)); background: transparent; flex: 1; }
+.mobile-app .sidebar { display: none; }
+.mobile-app.mobile-learning .sidebar { display: block; width: 100%; padding: 0 20px; border: 0; background: transparent; }
+.mobile-learning .sidebar > div:first-child { display: flex; overflow-x: auto; gap: 4px; }
+.mobile-learning .sidebar button { flex: none; width: auto; white-space: nowrap; }
+.mobile-learning .sidebar button:first-child, .mobile-learning .sidebar .goal { display: none; }
+.mobile-app .utility, .mobile-app .practice-main { padding: 8px 22px 24px; }
+.mobile-app .practice-top:empty, .mobile-app .instructions, .mobile-app .practice-footnote,
+.mobile-app .revision-desktop-title, .mobile-app .revision-description,
+.mobile-app .revision-view.practice-main > .sentence, .mobile-app .practice-tools > .hint-button,
+.mobile-app .revision-back,
+.mobile-feedback-screen #practice-feedback .feedback-heading { display: none; }
+.mobile-app .sentence-card {
+  min-height: 0;
+  padding: 23px 19px 18px;
+  background: #f0ebfb;
+  border: 0;
+  border-radius: 20px;
+  color: #15122d;
+  font-size: 24px;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+.mobile-app .sentence-row { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.mobile-app .sentence-card-actions { margin: 0; }
+.mobile-app .sentence-card .icon-button { width: 44px; height: 44px; border-radius: 15px; color: #6043db; }
+.mobile-app label { font-size: 14px; color: #554c74; }
+.mobile-app .textarea-wrap { border: 1px solid #d9cfee; border-radius: 18px; background: #fefcff; }
+.mobile-app textarea { height: 158px; padding: 15px 15px 36px; font-size: 17px; color: #15122d; }
+.mobile-app textarea::placeholder, .mobile-app .counter { color: #6b6387; }
+.mobile-app .counter { pointer-events: none; }
+.mobile-app .mobile-hint {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 15px;
+  margin-top: 17px;
+  border-radius: 15px;
+  background: #f1edf9;
+  color: #21183b;
+  justify-content: flex-start;
+  font-size: 15px;
+}
+.mobile-hint svg:first-child { color: #6446eb; }
+.mobile-hint svg:last-child { margin-left: auto; }
+.mobile-app .primary {
+  min-height: 49px;
+  border-radius: 15px;
+  font-size: 16px;
+  color: white;
+  background: linear-gradient(170deg,#866de8,#5540c7);
+}
+.mobile-app .primary:disabled { opacity: .6; }
+.mobile-app .secondary { border-radius: 13px; }
+.mobile-app .inline-actions { display: flex; flex-direction: column-reverse; gap: 8px; margin-top: 20px; }
+.mobile-app .inline-actions .secondary { align-self: center; }
+.mobile-app .practice-tools { justify-content: space-between; flex-wrap: wrap; gap: 7px; }
+.mobile-app .mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 7px 14px max(8px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: #fdfaff;
+}
+.phone-preview .mobile-nav { max-width: 414px; }
+.mobile-nav button { flex-direction: column; gap: 4px; min-height: 46px; color: #655d81; font-size: 13px; }
+.mobile-nav button[aria-current] { color: #5738d1; font-weight: 750; }
+.mobile-screen-title { position: relative; width: 100%; text-align: center; }
+.mobile-screen-title h1 { margin: 0; font-size: 23px; }
+.mobile-screen-title .icon-button { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+.mobile-app .inline-result.feedback { background: transparent; border: 0; box-shadow: none; padding: 0; }
+.mobile-feedback-screen #practice-feedback { margin: 0; }
+.mobile-app .mobile-score { background: #fffaff; border: 1px solid #eee7f8; border-radius: 22px; padding: 16px; margin-bottom: 12px; }
+.mobile-score-dial { position: relative; max-width: 180px; margin: auto; }
+.mobile-score-dial svg { display: block; width: 100%; fill: none; stroke: #8568f4; stroke-width: 9; stroke-linecap: round; }
+.mobile-score-dial path:first-child { stroke: #dfd5ff; }
+.mobile-score-dial path[stroke-dasharray="0 100"] { visibility: hidden; }
+.mobile-score-dial strong { position: absolute; bottom: 2px; inset-inline: 0; text-align: center; font-size: 39px; letter-spacing: -1.5px; }
+.mobile-score-dial small { font-size: 15px; letter-spacing: 0; color: #615b7c; }
+.mobile-app .feedback-card { padding: 11px; border-radius: 12px; margin-bottom: 5px; }
+.mobile-app .feedback-card h4 { font-size: 15px; }
+.mobile-app .feedback-card p { font-size: 14px; }
+.mobile-app .mobile-suggestion { margin-top: 14px; padding: 15px; background: #efe8fc; border-radius: 17px; }
+.mobile-app .mobile-suggestion h3 { margin: 0; color: #5738d1; font-size: 14px; }
+.mobile-suggestion p { margin: 7px 0 0; font-size: 17px; line-height: 1.4; font-weight: 650; }
+.mobile-app .feedback-actions { flex-wrap: wrap; }
+.mobile-app .feedback-actions .primary { flex: 1; }
+.mobile-app .revision-original { font-size: 17px; background: #f1ecfa; border-radius: 16px; padding: 15px; }
+.mobile-app .revision-actions { display: flex; flex-wrap: wrap; }
+.mobile-app .revision-actions .primary, .mobile-app .mobile-skip { flex: 1; }
+.mobile-app .mobile-skip { width: 100%; margin-top: 12px; }
+@media (max-width: 380px) {
+  .mobile-app > header, .mobile-app .utility, .mobile-app .practice-main { padding-inline: 16px; }
+}
