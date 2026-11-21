@@ -34,22 +34,15 @@ body:has(.app.phone-preview) { background: #ede8f7; }
   background: linear-gradient(145deg,#a290ff,#6950e4);
   border-radius: 12px;
 }
-.mobile-app:not(.mobile-learning) .app-mode-switcher { display: none; }
+.mobile-app:not(.mobile-saved) .app-mode-switcher { display: none; }
 .mobile-app .app-mode-switcher button { padding: 7px; font-size: 11px; }
-.mobile-goal { text-align: right; font-size: 16px; color: #615b7c; }
-.mobile-goal progress { display: block; width: 76px; height: 8px; margin-top: 7px; accent-color: var(--blue); }
 .mobile-app .workspace { display: block; min-height: 0; padding-bottom: calc(64px + env(safe-area-inset-bottom)); background: transparent; flex: 1; }
 .mobile-app .sidebar { display: none; }
-.mobile-app.mobile-learning .sidebar { display: block; width: 100%; padding: 0 20px; border: 0; background: transparent; }
-.mobile-learning .sidebar > div:first-child { display: flex; overflow-x: auto; gap: 4px; }
-.mobile-learning .sidebar button { flex: none; width: auto; white-space: nowrap; }
-.mobile-learning .sidebar button:first-child, .mobile-learning .sidebar .goal { display: none; }
 .mobile-app .utility, .mobile-app .practice-main { padding: 8px 22px 24px; }
 .mobile-app .practice-top:empty, .mobile-app .instructions, .mobile-app .practice-footnote,
 .mobile-app .revision-desktop-title, .mobile-app .revision-description,
 .mobile-app .revision-view.practice-main > .sentence, .mobile-app .practice-tools > .hint-button,
-.mobile-app .revision-back,
-.mobile-feedback-screen #practice-feedback .feedback-heading { display: none; }
+.mobile-app .revision-back { display: none; }
 .mobile-app .sentence-card {
   min-height: 0;
   padding: 23px 19px 18px;
@@ -115,7 +108,6 @@ body:has(.app.phone-preview) { background: #ede8f7; }
 .mobile-screen-title h1 { margin: 0; font-size: 23px; }
 .mobile-screen-title .icon-button { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
 .mobile-app .inline-result.feedback { background: transparent; border: 0; box-shadow: none; padding: 0; }
-.mobile-feedback-screen #practice-feedback { margin: 0; }
 .mobile-app .mobile-score { background: #fffaff; border: 1px solid #eee7f8; border-radius: 22px; padding: 16px; margin-bottom: 12px; }
 .mobile-score-dial { position: relative; max-width: 180px; margin: auto; }
 .mobile-score-dial svg { display: block; width: 100%; fill: none; stroke: #8568f4; stroke-width: 9; stroke-linecap: round; }
@@ -138,3 +130,5 @@ body:has(.app.phone-preview) { background: #ede8f7; }
 @media (max-width: 380px) {
   .mobile-app > header, .mobile-app .utility, .mobile-app .practice-main { padding-inline: 16px; }
 }
+
+.mobile-app #practice-feedback { scroll-margin-top: 16px; }
