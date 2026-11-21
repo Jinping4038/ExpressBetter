@@ -14,7 +14,7 @@ export async function updateRecords(key, update) {
     return next;
   };
   try {
-    if (globalThis.navigator?.locks) return await navigator.locks.request('translatebetter:' + key, commit);
+    if (globalThis.navigator?.locks) return await navigator.locks.request('expressbetter:' + key, commit);
     return commit();
   } catch (error) {
     throw new Error('Could not save progress in this browser. Check available storage and try again. ' + error.message);

@@ -1,4 +1,4 @@
-# TranslateBetter
+# ExpressBetter
 
 A responsive React recreation of the three supplied screens: landing, translation practice, and feedback.
 

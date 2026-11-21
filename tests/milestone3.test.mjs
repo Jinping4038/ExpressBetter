@@ -446,7 +446,7 @@ test('App mode choice persists, switcher selects either mode, and meanings are r
   let notice=noticeHarness.render(AppModeChooser,{mode,onSelect},tree=>{tree.props.ref.current=nativeDialog;});
   assert.equal(notice.type,'dialog');
   assert.equal(nativeDialog.open,true);
-  assert.ok(text(notice).includes('Welcome to TranslateBetter'));
+  assert.ok(text(notice).includes('Welcome to ExpressBetter'));
   assert.ok(text(notice).includes('No translation assistance is provided.'));
   button(notice,'Learner Version').props.onClick();
   notice=noticeHarness.render(AppModeChooser,{mode,onSelect});

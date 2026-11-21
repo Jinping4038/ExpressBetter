@@ -19,8 +19,8 @@ export function AppModeChooser({mode,onSelect}) {
   },[mode]);
   if(mode)return null;
   return <dialog className="reviewer-notice" ref={dialogRef} aria-labelledby="app-mode-title" aria-describedby="app-mode-description" onCancel={event=>event.preventDefault()}>
-    <h2 id="app-mode-title">Welcome to TranslateBetter</h2>
-    <p id="app-mode-description">TranslateBetter is designed for Chinese-speaking learners practicing English translation.<br/>Choose how you would like to explore the app.</p>
+    <h2 id="app-mode-title">Welcome to ExpressBetter</h2>
+    <p id="app-mode-description">ExpressBetter is designed for Chinese-speaking learners practicing English translation.<br/>Choose how you would like to explore the app.</p>
     <div className="app-mode-options">
       <section><h3>Learner Version</h3><p>For Chinese-speaking English learners.<br/>No translation assistance is provided.</p><button className="primary" onClick={()=>onSelect('learner')} autoFocus>Learner Version</button></section>
       <section><h3>Reviewer Version</h3><p>For reviewers who may not read Chinese.<br/>English meaning support is available.</p><button className="secondary" onClick={()=>onSelect('reviewer')}>Reviewer Version</button></section>
