@@ -9,7 +9,7 @@ import Progress from './Progress.jsx';
 import RevisionComparison from './RevisionComparison.jsx';
 import {practicePreferencesKey, normalizePracticePreferences, selectPracticeSentence} from './practice-selection.js';
 import Assessment from './Assessment.jsx';
-import {AppModeChooser, AppModeSwitcher, appModeKey, readAppMode, ReviewerMeaning} from './ReviewerSupport.jsx';
+import SourceSentence from './SourceSentence.jsx';
 import {validatedPracticeScores, validPracticeAttempt, validScore, readPracticeSession} from './practice-data.js';
 import {appendRecord, updateRecords, readRecords} from './storage.js';
 import {appendVersions, sameVersion} from './revision-history.js';
@@ -34,12 +34,6 @@ useEffect(() => {
   phoneViewport?.addEventListener('change', update);
   return () => phoneViewport?.removeEventListener('change', update);
 }, []);
-const [appMode,setAppMode]=useState(readAppMode);
-function selectAppMode(mode){
-  if(!['learner','reviewer'].includes(mode))return;
-  setAppMode(mode);
-  try{localStorage.setItem(appModeKey,mode);}catch{notify('App mode could not be saved. Your choice will last for this visit.');}
-}
 const [page,setPage]=useState(()=>{
   const restoredPage = restored?.page;
   if (mobile && ['progress','assessment','assessment-history'].includes(restoredPage)) return 'saved';
@@ -75,7 +69,6 @@ useEffect(()=>{
 useEffect(()=>{
   function syncRecords(event){
     try {
-      if(event.key===appModeKey)setAppMode(readAppMode());
       if(event.key===practicePreferencesKey)setPreferences(normalizePracticePreferences(read(practicePreferencesKey,null)));
       if(event.key==='tb-completed')setCompleted(readRecords(event.key));
       if(event.key==='tb-assessments')setAssessments(readRecords(event.key));
@@ -245,14 +238,14 @@ const mobileHeader = mobile && page === 'revision'
       <h1>Revise</h1>
     </div>
   : null;
-const sourceSentence=<ReviewerMeaning key={ex.zh} source={ex.zh} reviewer={appMode==='reviewer'} audio={<button onClick={speak} className="icon-button" aria-label="Listen to Chinese sentence"><Volume2 size={21}/></button>}/>;
+const sourceSentence=<SourceSentence key={ex.zh} source={ex.zh} audio={<button onClick={speak} className="icon-button" aria-label="Listen to Chinese sentence"><Volume2 size={21}/></button>}/>;
 const referenceAnswer=showAnswer&&<section id="reference-answer" className="feedback inline-result" aria-label="Reference answer"><h3><BookOpen size={19}/>Reference answer</h3><div className="reference"><p>{ex.en}</p><button className="icon-button" onClick={async()=>{try{await navigator.clipboard.writeText(ex.en);notify('Reference answer copied')}catch{notify('Copy is unavailable in this browser')}}} aria-label="Copy reference answer"><Copy size={17}/></button></div><button className="save-button" onClick={save}><Bookmark size={15}/>{saved.some(s=>s.zh===ex.zh)?'Saved to my sentences':'Save this sentence'}</button></section>;
-return <div className={`app${mobile?' mobile-app':''}${phonePreview?' phone-preview':''}${viewingSaved?' mobile-saved':''}`}>
-<AppModeChooser mode={appMode} onSelect={selectAppMode}/><header>{mobileHeader || <><button className="brand" onClick={()=>setPage(mobile?'practice':'home')} aria-label="ExpressBetter home"><span className="brand-icon">{mobile?<Sparkles size={22}/>:<BookOpen size={31}/>}</span><span><strong>ExpressBetter</strong>{!mobile&&<small>AI-assisted English translation practice</small>}</span></button><AppModeSwitcher mode={appMode} onSelect={selectAppMode}/></>}</header>
+return <div className={`app${mobile?' mobile-app':''}${phonePreview?' phone-preview':''}`}>
+<header>{mobileHeader || <button className="brand" onClick={()=>setPage(mobile?'practice':'home')} aria-label="ExpressBetter home"><span className="brand-icon">{mobile?<Sparkles size={22}/>:<BookOpen size={31}/>}</span><span><strong>ExpressBetter</strong>{!mobile&&<small>AI-assisted English translation practice</small>}</span></button>}</header>
 {page==='home'?<main className="landing"><section className="hero"><div className="hero-copy"><span className="eyebrow"><span/> A LITTLE PRACTICE. A LOT OF PROGRESS.</span><h1>Improve your English<br/>through <span>real translations.</span></h1><p>Find the right words. Make them your own.<br/>Practice Chinese → English translation with thoughtful feedback that helps you grow.</p><div className="hero-actions"><button className="primary start" onClick={()=>setPage('practice')}>Start practicing</button><button className="secondary check-level" onClick={()=>setPage('assessment')}>Check Your Level</button></div><div className="hero-note"><Check size={15}/> No pressure. Just progress, one sentence at a time.</div></div><div className="illustration" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><span className="twinkle one">✦</span><span className="twinkle two">✧</span><div className="bubble chinese">中</div><div className="bubble english">A</div><div className="book"><div className="book-page left"><i/><i/><i/><i/><i/></div><div className="book-page right"><i/><i/><i/><i/><i/></div></div><span className="book-shadow"/><span className="mini-pill"><Sparkles size={14}/> Words open worlds</span></div></section><div className="section-heading"><h2>A better way to learn by doing</h2><span>Small steps. Lasting confidence.</span></div><section className="features">{[[Heart,'amber','Personalized feedback','Understand the meaning, grammar, and naturalness of your writing.'],[FileCheck2,'purple','Revise and improve','Compare your versions and discover how to make each sentence better.'],[Bookmark,'green','Keep the good ones','Build a personal collection of useful sentences to revisit.'],[ChartNoAxesColumnIncreasing,'blue','See your progress','Turn everyday practice into improvement you can feel.']].map(([Icon,color,title,text],i)=><article key={title}><div className={'feature-icon '+color}><Icon size={23}/></div><span className="feature-number">0{i+1}</span><h3>{title}</h3><p>{text}</p></article>)}</section><footer><span>Made for the moments when you want to get a little better.</span><span>中文 <ArrowRight size={12}/> English</span></footer></main>:
 <div className="workspace">
 {<aside className="sidebar"><div>{nav.map(([id,label,Icon])=><button key={id} className={page===id||(id==='assessment'&&page==='assessment-history')||(id==='practice'&&['revision','comparison'].includes(page))||(id==='saved'&&page==='saved-detail')?'selected':''} onClick={()=>setPage(id)}><Icon size={19}/>{label}</button>)}</div><div className="goal"><span>Today’s goal</span><div><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle cx="20" cy="20" r="16" style={{strokeDasharray:`${Math.min(todayCount,10)*10.05} 101`}}/></svg><strong>{Math.min(todayCount,10)} <small>/ 10<br/>sentences</small></strong></div><p>{todayCount>=10?'Goal reached. Nice work!':'You’re building a good habit.'}</p></div></aside>}
-{['assessment','assessment-history'].includes(page)?<Assessment key={page} reviewer={appMode==='reviewer'} showHistory={page==='assessment-history'} assessments={assessments} onComplete={completeAssessment} onPractice={()=>setPage('practice')} onProgress={()=>setPage('progress')}/>:page==='saved-detail'?<main className="utility revision-view">
+{['assessment','assessment-history'].includes(page)?<Assessment key={page} showHistory={page==='assessment-history'} assessments={assessments} onComplete={completeAssessment} onPractice={()=>setPage('practice')} onProgress={()=>setPage('progress')}/>:page==='saved-detail'?<main className="utility revision-view">
   <button className="secondary" onClick={()=>setPage('saved')}>Back to My Sentences</button>
   <h1 className="saved-detail-title">{selectedSentence.zh}</h1>
   <p className="muted">Reference answer · {selectedSentence.en}</p>

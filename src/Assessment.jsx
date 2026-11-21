@@ -1,6 +1,6 @@
 import {feedbackEndpoint} from './feedback-endpoint.js';
 import AssessmentHistory from './AssessmentHistory.jsx';
-import {ReviewerMeaning} from './ReviewerSupport.jsx';
+import SourceSentence from './SourceSentence.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {assessmentBankVersion, assessmentForms, assessmentFormIndex, selectAssessmentForm} from './assessment-exercises.js';
 import {validAssessmentScores, summarizeAssessment} from './assessment-data.js';
@@ -29,7 +29,7 @@ function createDraft(results) {
   };
 }
 
-export default function Assessment({assessments, onComplete, onPractice, onProgress, showHistory = false, reviewer = false}) {
+export default function Assessment({assessments, onComplete, onPractice, onProgress, showHistory = false}) {
   const [draft, setDraft] = useState(loadDraft);
   // Enter through the overview even when an unfinished draft exists.
   const [active, setActive] = useState(false);
@@ -149,7 +149,7 @@ export default function Assessment({assessments, onComplete, onPractice, onProgr
     <p className="muted">Translate independently. Your scores will appear after submission.</p>
     <div className="practice-top">Sentence {draft.index + 1} of 5</div>
     <progress className="assessment-progress" value={draft.index + 1} max="5" aria-label="Assessment progress"/>
-    <ReviewerMeaning key={draft.id+item.zh} source={item.zh} reviewer={reviewer}/>
+    <SourceSentence key={draft.id+item.zh} source={item.zh}/>
     <form onSubmit={submit}>
       <div className="label-row"><label htmlFor="assessment-answer">Your translation</label></div>
       <div className="textarea-wrap">

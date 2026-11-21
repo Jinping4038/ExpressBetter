@@ -10,7 +10,6 @@ import {practiceProgress} from '../src/progress-data.js';
 import {summarizeAssessment} from '../src/assessment-data.js';
 import {assessmentForms, assessmentBankVersion} from '../src/assessment-exercises.js';
 import exercises from '../src/exercises.js';
-import {reviewerMeanings} from '../src/reviewer-meanings.js';
 
 function storage() {
   const entries = new Map();
@@ -185,22 +184,17 @@ test('Milestone 3 regression flows with isolated storage and mocked AI',async()=
       localStorage.setItem('tb-assessment-draft',JSON.stringify(draft));
       const assessmentHarness=hooks();globalThis.__testReact=assessmentHarness.react;
       const {default:Assessment}=await componentModule('src/Assessment.jsx');
-      let assessmentTree=assessmentHarness.render(Assessment,{...props,assessments,reviewer:round===1});
+      let assessmentTree=assessmentHarness.render(Assessment,{...props,assessments});
       assert.ok(text(assessmentTree).includes('Check Your Translation Level'));
       assert.ok(!nodes(assessmentTree).some(node=>node.type==='form'));
       assert.equal(JSON.parse(localStorage.getItem('tb-assessment-draft')).id,draft.id);
       button(assessmentTree,'Take Another Assessment').props.onClick();
-      assessmentTree=assessmentHarness.render(Assessment,{...props,assessments,reviewer:round===1});
+      assessmentTree=assessmentHarness.render(Assessment,{...props,assessments});
       assert.ok(!text(assessmentTree).includes('Hint 1'));
       assert.ok(!text(assessmentTree).includes(draft.items[4].en));
-      const support=nodes(assessmentTree).find(node=>node.type?.name==='ReviewerMeaning');
+      const support=nodes(assessmentTree).find(node=>node.type?.name==='SourceSentence');
       assert.equal(support.props.source,draft.items[4].zh);
-      assert.equal(support.props.reviewer,round===1);
-      const storedDraftBeforeModeSwitch=localStorage.getItem('tb-assessment-draft');
-      assessmentHarness.render(Assessment,{...props,assessments,reviewer:round!==1});
-      assert.equal(localStorage.getItem('tb-assessment-draft'),storedDraftBeforeModeSwitch);
       assert.equal(support.props.key,draft.id+draft.items[4].zh);
-      assert.ok(!text(assessmentTree).includes(reviewerMeanings[draft.items[4].zh]));
       await nodes(assessmentTree).find(node=>node.type==='form').props.onSubmit(event);
       assessmentTree=assessmentHarness.render(Assessment,{...props,assessments});
       assert.ok(text(assessmentTree).includes('Check Your Translation Level'));
@@ -318,6 +312,7 @@ test('Milestone 3 regression flows with isolated storage and mocked AI',async()=
     const preservedSaved=localStorage.getItem('tb-saved');
     const preservedAssessments=localStorage.getItem('tb-assessments');
     sessionStorage.setItem('tb-active-practice','null');
+    localStorage.setItem('tb-app-mode','reviewer');
     const selectionHarness=hooks();globalThis.__testReact=selectionHarness.react;
     const {default:SelectionApp}=await componentModule('src/main.jsx',true);
     let selection=selectionHarness.render(SelectionApp);
@@ -343,34 +338,19 @@ test('Milestone 3 regression flows with isolated storage and mocked AI',async()=
     selection=selectionHarness.render(SelectionApp);
     assert.equal(button(selection,'Need a hint?').props['aria-expanded'],false);
 
-    const firstSource=nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.source;
-    const practiceSupport=nodes(selection).find(node=>node.type?.name==='ReviewerMeaning');
-    assert.equal(practiceSupport.props.reviewer,false);
-    const recordsBeforeModeSwitch=localStorage.getItem('tb-completed');
-    nodes(selection).find(node=>node.props?.id==='translation').props.onChange({target:{value:'An active draft.'}});
-    selection=selectionHarness.render(SelectionApp);
-    nodes(selection).find(node=>node.type?.name==='AppModeSwitcher').props.onSelect('reviewer');
-    selection=selectionHarness.render(SelectionApp);
-    assert.equal(nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.reviewer,true);
-    assert.equal(nodes(selection).find(node=>node.props?.id==='translation').props.value,'An active draft.');
-    assert.equal(localStorage.getItem('tb-completed'),recordsBeforeModeSwitch);
-    assert.equal(localStorage.getItem('tb-assessments'),preservedAssessments);
-    nodes(selection).find(node=>node.type?.name==='AppModeSwitcher').props.onSelect('learner');
-    selection=selectionHarness.render(SelectionApp);
-    assert.equal(nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.reviewer,false);
-    assert.equal(nodes(selection).find(node=>node.props?.id==='translation').props.value,'An active draft.');
-    assert.ok(firstSource.includes(practiceSupport.props.source));
-    assert.equal(practiceSupport.props.key,practiceSupport.props.source);
+    const firstSource=nodes(selection).find(node=>node.type?.name==='SourceSentence').props.source;
+    assert.ok(!text(selection).includes('English Meaning'));
+    assert.ok(!text(selection).includes('Reviewer Version'));
     button(selection,'Next sentence').props.onClick();
     selection=selectionHarness.render(SelectionApp);
-    const nextSource=nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.source;
+    const nextSource=nodes(selection).find(node=>node.type?.name==='SourceSentence').props.source;
     assert.notEqual(firstSource,nextSource);
     button(selection,'Previous sentence').props.onClick();
     selection=selectionHarness.render(SelectionApp);
-    assert.equal(nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.source,firstSource);
+    assert.equal(nodes(selection).find(node=>node.type?.name==='SourceSentence').props.source,firstSource);
     button(selection,'Next sentence').props.onClick();
     selection=selectionHarness.render(SelectionApp);
-    assert.equal(nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.source,nextSource);
+    assert.equal(nodes(selection).find(node=>node.type?.name==='SourceSentence').props.source,nextSource);
     assert.ok(!nodes(selection).some(node=>node.type==='button'&&text(node)==='Settings'));
     // Preferences saved before Settings was hidden must survive revisits.
     localStorage.setItem('tb-practice-preferences',JSON.stringify({prioritizeUnseen:false,repeatLowerScores:true}));
@@ -386,12 +366,12 @@ test('Milestone 3 regression flows with isolated storage and mocked AI',async()=
     assert.deepEqual(readPracticeSession().practiceTrail,pathBefore);
     button(selection,'Practice').props.onClick();
     selection=refreshedSelection.render(RefreshedSelectionApp);
-    assert.equal(nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.source,nextSource);
+    assert.equal(nodes(selection).find(node=>node.type?.name==='SourceSentence').props.source,nextSource);
     button(selection,'My Sentences').props.onClick();
     selection=refreshedSelection.render(RefreshedSelectionApp);
     button(selection,'Practice Again').props.onClick();
     selection=refreshedSelection.render(RefreshedSelectionApp);
-    assert.ok(nodes(selection).find(node=>node.type?.name==='ReviewerMeaning').props.source.includes(JSON.parse(preservedSaved)[0].zh));
+    assert.ok(nodes(selection).find(node=>node.type?.name==='SourceSentence').props.source.includes(JSON.parse(preservedSaved)[0].zh));
     assert.equal(localStorage.getItem('tb-saved'),preservedSaved);
     assert.equal(nodes(selection).find(node=>node.props?.id==='translation').props.value,'');
     const beforeReplay=practiceProgress(JSON.parse(localStorage.getItem('tb-completed')));
@@ -430,89 +410,6 @@ test('Milestone 3 regression flows with isolated storage and mocked AI',async()=
 });
 
 
-test('App mode choice persists, switcher selects either mode, and meanings are reviewer-only for all sources',async()=>{
-  globalThis.localStorage=storage();
-  localStorage.setItem('tb-assessments','[{"id":"preserved"}]');
-  localStorage.setItem('tb-completed','[{"id":"preserved"}]');
-  localStorage.setItem('tb-reviewer-notice-dismissed','true');
-  const beforeAssessment=localStorage.getItem('tb-assessments');
-  const beforePractice=localStorage.getItem('tb-completed');
-  const noticeHarness=hooks();globalThis.__testReact=noticeHarness.react;
-  const {AppModeChooser,AppModeSwitcher,appModeKey,readAppMode}=await componentModule('src/ReviewerSupport.jsx');
-  assert.equal(readAppMode(),null); // Old reviewer dismissal is not an app-mode choice.
-  let mode=readAppMode();
-  const onSelect=value=>{mode=value;localStorage.setItem(appModeKey,value);};
-  const nativeDialog={open:false,showModal(){this.open=true;},close(){this.open=false;}};
-  let notice=noticeHarness.render(AppModeChooser,{mode,onSelect},tree=>{tree.props.ref.current=nativeDialog;});
-  assert.equal(notice.type,'dialog');
-  assert.equal(nativeDialog.open,true);
-  assert.ok(text(notice).includes('Welcome to ExpressBetter'));
-  assert.ok(text(notice).includes('No translation assistance is provided.'));
-  button(notice,'Learner Version').props.onClick();
-  notice=noticeHarness.render(AppModeChooser,{mode,onSelect});
-  assert.equal(notice,null);
-  assert.equal(nativeDialog.open,false);
-  assert.equal(readAppMode(),'learner');
-  const revisitHarness=hooks();globalThis.__testReact=revisitHarness.react;
-  const {AppModeChooser:RevisitedChooser}=await componentModule('src/ReviewerSupport.jsx');
-  assert.equal(revisitHarness.render(RevisitedChooser,{mode:readAppMode(),onSelect}),null);
-  revisitHarness.cleanup();
-  const switcher=AppModeSwitcher({mode,onSelect});
-  assert.equal(nodes(switcher).filter(node=>node.type==='button').length,2);
-  assert.ok(!text(switcher).includes('App mode'));
-  assert.equal(button(switcher,'Learner Version').props['aria-pressed'],true);
-  button(switcher,'Reviewer Version').props.onClick();
-  const selectedSwitcher=AppModeSwitcher({mode,onSelect});
-  assert.equal(button(selectedSwitcher,'Reviewer Version').props['aria-pressed'],true);
-  assert.equal(readAppMode(),'reviewer');
-  assert.equal(localStorage.getItem('tb-assessments'),beforeAssessment);
-  assert.equal(localStorage.getItem('tb-completed'),beforePractice);
-  noticeHarness.cleanup();
-
-  const meaningHarness=hooks();globalThis.__testReact=meaningHarness.react;
-  const {ReviewerMeaning}=await componentModule('src/ReviewerSupport.jsx');
-  const sources=[...exercises,...assessmentForms.flat()];
-  assert.equal(sources.length,120);
-  assert.equal(Object.keys(reviewerMeanings).length,120);
-  for(const sentence of sources){
-    const meaning=reviewerMeanings[sentence.zh];
-    assert.ok(typeof meaning==='string'&&meaning.length>20,sentence.zh);
-    assert.notEqual(meaning,sentence.en); // Separate authored gloss, no reference fallback.
-    let preview=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,audio:'audio-control',reviewer:true});
-    assert.ok(text(preview).includes('audio-control'));
-    const actionRow=nodes(preview).find(node=>node.props?.className==='sentence-card-actions');
-    assert.ok(actionRow.props.children.some(node=>node?.type==='button'));
-    assert.ok(!text(preview).includes('Reviewer Support: Show'));
-    assert.ok(!text(preview).includes(meaning));
-    let learner=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:false,audio:'audio-control'});
-    assert.ok(!text(learner).includes('English Meaning'));
-    assert.ok(text(learner).includes(sentence.zh));
-    assert.ok(text(learner).includes('audio-control'));
-    preview=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:true});
-    const show=button(preview,'English Meaning');
-    assert.equal(show.props['aria-expanded'],false);
-    show.props.onClick();
-    preview=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:true});
-    assert.ok(text(preview).includes(meaning));
-    assert.ok(text(preview).includes('English Meaning:'));
-    assert.equal(preview.props.className,'sentence sentence-card');
-    const switched=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:false});
-    assert.ok(!text(switched).includes(meaning));
-    const reopened=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:true});
-    assert.ok(!text(reopened).includes(meaning));
-    button(reopened,'English Meaning').props.onClick();
-    preview=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:true});
-    const hide=button(preview,'English Meaning');
-    assert.equal(hide.props['aria-expanded'],true);
-    hide.props.onClick();
-    preview=meaningHarness.render(ReviewerMeaning,{source:sentence.zh,reviewer:true});
-    assert.ok(!text(preview).includes(meaning));
-  }
-  assert.equal(localStorage.getItem('tb-assessments'),beforeAssessment);
-  assert.equal(localStorage.getItem('tb-completed'),beforePractice);
-  meaningHarness.cleanup();
-});
-
 test('Assessment runs fixed A–D forms in order, resumes drafts, and retains baseline/history without exposing form names',async()=>{
   globalThis.localStorage=storage();
   globalThis.sessionStorage=storage();
@@ -524,7 +421,7 @@ test('Assessment runs fixed A–D forms in order, resumes drafts, and retains ba
       const value=results.length+1;
       return Response.json({feedback:{scores:{meaning:value,grammar:value,naturalness:value}}});
     };
-    const props=()=>({assessments:results,reviewer:results.length%2===1,
+    const props=()=>({assessments:results,
       onComplete:async result=>{results=await appendRecord('tb-assessments',result);}});
     for(let round=0;round<5;round++){
       let flow=hooks();globalThis.__testReact=flow.react;
@@ -537,9 +434,8 @@ test('Assessment runs fixed A–D forms in order, resumes drafts, and retains ba
       assert.deepEqual(current.items.map(item=>item.zh),assessmentForms[round%4].map(item=>item.zh));
       const callsBefore=requests;
       for(let question=0;question<5;question++){
-        const support=nodes(page).find(node=>node.type?.name==='ReviewerMeaning');
+        const support=nodes(page).find(node=>node.type?.name==='SourceSentence');
         assert.equal(support.props.source,assessmentForms[round%4][question].zh);
-        assert.equal(support.props.reviewer,round%2===1);
         assert.ok(!/Set [ABCD]/.test(text(page)));
         assert.ok(!text(page).includes('Hint 1'));
         assert.ok(!text(page).includes(assessmentForms[round%4][question].en));
@@ -602,7 +498,7 @@ test('Revision submissions stay inline with matching feedback, selectable compar
     await nodes(page).find(node=>node.type==='form').props.onSubmit(event);page=flow.render(App);
     await button(page,'Save to My Sentences').props.onClick();page=flow.render(App);
     button(page,'Revise Translation').props.onClick();page=flow.render(App);
-    const source=nodes(page).find(node=>node.type?.name==='ReviewerMeaning').props.source;
+    const source=nodes(page).find(node=>node.type?.name==='SourceSentence').props.source;
     for(round=1;round<=2;round++){
       const revised=round===1?'I have learned things.':'I have learned many things.';
       nodes(page).find(node=>node.props?.id==='revision').props.onChange({target:{value:revised}});page=flow.render(App);
@@ -611,7 +507,7 @@ test('Revision submissions stay inline with matching feedback, selectable compar
       assert.equal(nodes(page).find(node=>node.props?.id==='revision').props.value,revised);
       assert.equal(nodes(page).find(node=>node.type?.name==='FeedbackCards').props.feedback.meaning,'Feedback for version '+round);
       assert.equal(text(nodes(page).find(node=>node.props?.className==='revision-original')),'I learn things.');
-      assert.equal(nodes(page).find(node=>node.type?.name==='ReviewerMeaning').props.source,source);
+      assert.equal(nodes(page).find(node=>node.type?.name==='SourceSentence').props.source,source);
       assert.ok(nodes(page).some(node=>node.type?.name==='RevisionComparison'));
     }
     let comparison=nodes(page).find(node=>node.type?.name==='RevisionComparison');

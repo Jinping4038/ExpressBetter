@@ -148,31 +148,12 @@
 .progress-trend-scroll{overflow-x:auto;max-width:100%}
 .progress-charts>.progress-panel{min-width:0}
 
-.reviewer-notice{width:min(440px,calc(100vw - 40px));padding:28px;border:1px solid var(--line);border-radius:14px;color:#17243e;background:white;box-shadow:0 15px 60px #17243e26}
-.reviewer-notice::backdrop{background:#17243e55}
-.reviewer-notice h2{font-family:Manrope,sans-serif;font-size:21px;margin:0 0 16px}
-.reviewer-notice p{font-size:14px;color:#52607a}
-.reviewer-notice .primary{float:right;margin-top:4px}
  .sentence.sentence-card{display:block}
 .sentence-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .sentence-row>span{min-width:0}
 .sentence-card-actions{display:flex;align-items:center;gap:9px;flex-shrink:0}
-.reviewer-meaning-button{font-size:12px;padding:9px 12px;white-space:nowrap;color:#435b82;border-color:#dce4f2;box-shadow:0 1px 2px #17243e05}
-.reviewer-meaning-button[aria-expanded="true"]{background:#eef3ff;border-color:#b7caf0}
-.reviewer-meaning{font-size:14px;font-weight:450;line-height:1.7;color:#43516a;border-top:1px solid #e6e4f1;padding-top:15px;margin:16px 0 0}
-.reviewer-meaning strong{font-weight:700;color:#344766}
-@media(max-width:600px){.sentence-row{flex-wrap:wrap;gap:12px}.sentence-card-actions{margin-left:auto}.reviewer-meaning-button{font-size:12px}.reviewer-meaning{font-size:13px}}
+@media(max-width:600px){.sentence-row{flex-wrap:wrap;gap:12px}.sentence-card-actions{margin-left:auto}}
 
-.app-mode-options{display:grid;gap:12px}
-.app-mode-options section{padding:16px;border:1px solid var(--line);border-radius:9px;background:#f8faff}
-.app-mode-options h3{font-size:15px;margin:0 0 6px}
-.app-mode-options p{font-size:12px;margin-bottom:12px}
-.reviewer-notice .app-mode-options button{float:none;margin:0;width:100%}
-.app-mode-switcher{margin-left:auto;flex-shrink:0;background:#f5f8fd;border:1px solid #dce4f2;border-radius:9px;padding:4px;display:flex;align-items:center;gap:3px}
-.app-mode-switcher button{font-size:12px;font-weight:650;color:#68778f;padding:9px 12px;border-radius:6px;white-space:nowrap}
-.app-mode-switcher button:hover{background:#eaf1fc}
-.app-mode-switcher button[aria-pressed="true"]{background:#e4eeff;color:#1269f8;box-shadow:0 1px 3px #17243e0d}
-@media(max-width:600px){.app-mode-switcher button{padding:8px 10px;font-size:11px}}
 
 .assessment-back{margin-bottom:20px}
 

@@ -34,8 +34,6 @@ body:has(.app.phone-preview) { background: #ede8f7; }
   background: linear-gradient(145deg,#a290ff,#6950e4);
   border-radius: 12px;
 }
-.mobile-app:not(.mobile-saved) .app-mode-switcher { display: none; }
-.mobile-app .app-mode-switcher button { padding: 7px; font-size: 11px; }
 .mobile-app .workspace { display: block; min-height: 0; padding-bottom: calc(64px + env(safe-area-inset-bottom)); background: transparent; flex: 1; }
 .mobile-app .sidebar { display: none; }
 .mobile-app .utility, .mobile-app .practice-main { padding: 8px 22px 24px; }
