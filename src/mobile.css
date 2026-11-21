@@ -61,19 +61,17 @@ body:has(.app.phone-preview) { background: #ede8f7; }
 .mobile-app textarea::placeholder, .mobile-app .counter { color: #6b6387; }
 .mobile-app .counter { pointer-events: none; }
 .mobile-app .mobile-hint {
-  display: flex;
-  width: 100%;
-  min-height: 48px;
-  padding: 0 15px;
-  margin-top: 17px;
-  border-radius: 15px;
+  display: inline-flex;
+  width: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  margin-top: 12px;
+  border-radius: 12px;
   background: #f1edf9;
   color: #21183b;
-  justify-content: flex-start;
-  font-size: 15px;
+  font-size: 14px;
 }
 .mobile-hint svg:first-child { color: #6446eb; }
-.mobile-hint svg:last-child { margin-left: auto; }
 .mobile-app .primary {
   min-height: 49px;
   border-radius: 15px;
